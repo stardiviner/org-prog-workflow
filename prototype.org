@@ -1,0 +1,111 @@
+* Todos [0/1]
+
+- [ ] check out =org-projectile=
+- [ ] ask Tristan's implementation
+
+* Ideas [0/5]
+
+- [ ] Org-mode + programming project support -> workflow
+- [ ] integrate with =projectile=
+  - [ ] projectile hooks
+    - [ ] projectile-mode-hook
+    - [ ] projectile-after-switch-project-hook
+
+* Functions [0/3]
+
+** TODO 创建项目的时候根据不同的语言自动生成这个文档的框架 [4/4]
+     :LOGBOOK:
+     - State "TODO"       from              [2017-05-12 Fri 13:38]
+     :END:
+
+ #+BEGIN_SRC emacs-lisp
+ (defvar org-projectile--languages-alist
+   '((python-mode . python)
+     (ruby-mode . ruby)
+     (lisp-mode . lisp)
+     (common-lisp-mode . lisp)
+     (emacs-lisp-mode . elisp)
+     (clojure-mode . clojure)))
+
+ (yas-expand-snippet ; expand snippet which filename is like "python.snippet"
+  ;; get string of symbol
+  (symbol-name
+   ;; get current major-mode's language
+   (cdr (assoc major-mode org-projectile--languages-alist))))
+
+
+ ;; or you can insert org content directly by replacing `yas-expand-snippet' with `insert-file'.
+ #+END_SRC
+
+- [X] a sub-directory =snippets/= to include those snippets.
+  - [X] [[file:~/Org/Wiki/Computer%20Technology/Programming/Emacs/modes/YASnippet.org::*include%20third%20snippets%20directory][include third snippets directory]]
+    - [X] reference clojure-snippets, datomic-snippets.
+      - [X] record to Org
+
+#+BEGIN_SRC emacs-lisp
+(setq org-projectile-snippets-dir (file-name-directory load-file-name))
+
+;;;###autoload
+(defun org-projectile-snippets-initialize ()
+  (let ((snippets-dir (expand-file-name "snippets" org-projectile-snippets-dir)))
+    (when (boundp 'yas-snippet-dirs)
+      (add-to-list 'yas-snippet-dirs snippets-dir t))
+    (yas-load-directory snippets-dir)))
+
+;;;###autoload
+(eval-after-load 'yasnippet
+  '(clojure-snippets-initialize))
+#+END_SRC
+
+** TODO 仅限这个项目文档的org-capture templates实现 [0/2]
+     :LOGBOOK:
+     - State "TODO"       from              [2017-05-12 Fri 13:38]
+     :END:
+
+- [ ] use =.dir-locals.el= -> [[file:~/Org/Wiki/Computer%20Technology/Programming/Emacs/modes/modes.org::#directory%20local%20variables][directory local variables]]
+  - [ ] How to read and write to =.dir-locals.el= ?
+
+    #+NAME: .dir-locals.el
+    #+BEGIN_SRC emacs-lisp
+    (defun smart-org-capture-templates-for-programming ()
+      ;; make `org-capture-templates' buffer locally.
+      (make-local-variable 'org-capture-templates)
+      ;; append your custom capture templates definitions to buffer local `org-capture-templates'.
+      (setq org-capture-templates
+            (append '("p" "programming" ...) ; TODO: fill in your own template definition
+                    org-capture-templates))
+      )
+ 
+    (add-hook 'org-mode-hook #'smart-org-capture-templates-for-programming)
+    #+END_SRC
+
+** TODO 项目跳转时，增加一个跳转到笔记/示例 [0/2]
+     :LOGBOOK:
+     - State "TODO"       from              [2017-05-12 Fri 13:38]
+     :END:
+
+- [ ] define the notebook file =notebook.org=.
+- [ ] open a new window of notebook.org file beside the project buffer window.
+
+ #+BEGIN_SRC emacs-lisp
+ (defvar org-programming-workflow-file "TODO.org")
+
+ (defun open-corresponding-org-mode-file ()
+   (if org-prog-workflow-p
+       ;; - open file
+       ;; (find-file org-programming-workflow-file)
+       ;; - find org file headline as with code definition jumping.
+       (helm-org-rifle-files '(FILES))
+     ;; - open org headline with org link to headline [[file:file.org::*headline]].
+     (let ((file ..)
+           (headline ..))
+       (org-open-link-from-string (concat "[[file:" file "::*" headline)))
+     )
+   )
+
+ (advice-add 'xref-find-definitions ; [M-.]
+             :after
+             #'open-corresponding-org-mode-file)
+ #+END_SRC
+
+
